@@ -72,19 +72,32 @@ def get_all_translations(rna_sequence, genetic_code):
         A list of strings; each string is an sequence of amino acids encoded by
         `rna_sequence`.
     """
-    # Translate amount of
-    protein_sequence=[]
-    for i in range(0, len(rna_sequence) - 2, 3):
-        codon = rna_sequence[i:i+3]
-        codon = codon.upper()
-        if codon != "AUG":
-            # Go to next codon
-            amino_acid = genetic_code.get(codon, '?')
-            if amino_acid == "*":
-                break
-            protein_sequence.append(amino_acid)
-    return protein_sequence
+    all_protein_sequences = []
 
+    # Scan all three reading frames
+    for frame in range(3):
+        protein_sequence = []
+        # Start scanning from current frame
+        for i in range(frame, len(rna_sequence) - 2, 3):
+            codon = rna_sequence[i:i+3].upper()
+
+            # Look for the start codon "AUG"
+            if codon == "AUG":
+                current_protein = []
+                # From start codon, translate to protein
+                for j in range(i, len(rna_sequence) - 2, 3):
+                    next_codon = rna_sequence[j:j+3].upper()
+                    amino_acid = genetic_code.get(next_codon, '?')
+
+                    if amino_acid == '*':  # Stop codon found
+                        break
+                    current_protein.append(amino_acid)
+
+                # If a protein sequence was found, add it to the list
+                if current_protein:
+                    all_protein_sequences.append(''.join(current_protein))
+
+    return all_protein_sequences
 
 
 def get_reverse(sequence):
@@ -98,8 +111,26 @@ def get_reverse(sequence):
     --------
     >>> get_reverse('AUGC')
     'CGUA'
+
+    This is the way it could be done if there was no string method....
+    sequence =  sequence.upper()
+    seq_length = len(sequence)
+    reverse_string = ''
+    for index, char in enumerate(sequence):
+        # Multiply by negative in sequential order to go backwards
+        neg_i = index * -1
+        if neg_i != 0:
+            reverse_string += sequence[neg_i]
+        else:
+        # Since python indexes at 0, we must keep the last_char and only add it
+        # when reverse_string length is at the end
+            last_char = sequence[neg_i]
+        if len(reverse_string) == seq_length-1:
+            reverse_string += last_char
+    return reverse_string
     """
-    pass
+    sequence = sequence.upper()
+    return sequence[::-1]
 
 def get_complement(sequence):
     """Get the complement of a `sequence` of nucleotides.
@@ -113,7 +144,15 @@ def get_complement(sequence):
     >>> get_complement('AUGC')
     'UACG'
     """
-    pass
+    sequence = sequence.upper()
+    nuc_key = {'A': 'u', 'T': 'a', 'G':'c', 'C':'g', 'U': 'a'}
+    complement = ''
+    for i in sequence:
+        char = nuc_key.get(i)
+        complement += char
+    complement = complement.upper()
+    return complement
+
 
 def reverse_and_complement(sequence):
     """Get the reversed and complemented form of a `sequence` of nucleotides.
@@ -128,7 +167,8 @@ def reverse_and_complement(sequence):
     >>> reverse_and_complement('AUGC')
     'GCAU'
     """
-    pass
+    rev_com = get_reverse(get_complement(sequence))
+    return rev_com
 
 def get_longest_peptide(rna_sequence, genetic_code):
     """Get the longest peptide encoded by an RNA sequence.
@@ -157,7 +197,10 @@ def get_longest_peptide(rna_sequence, genetic_code):
         A string of the longest sequence of amino acids encoded by
         `rna_sequence`.
     """
-    pass
+    forward = get_all_translations(rna_sequence, genetic_code)
+    reverse = get_all_translations(reverse_and_complement(rna_sequence), genetic_code)
+    all_translations = forward + reverse
+    return max(all_translations, key=len, default="")
 
 
 if __name__ == '__main__':
