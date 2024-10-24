@@ -5,7 +5,7 @@ import re
 
 def vet_nucleotide_sequence(sequence):
     """
-    Return None if `sequence` is a valid RNA or DNA sequence, else raise exception. 
+    Return None if `sequence` is a valid RNA or DNA sequence, else raise exception.
 
     Parameters
     ----------
@@ -57,16 +57,16 @@ def vet_nucleotide_sequence(sequence):
     # any valid RNA and DNA sequence strings, respectively (and only strings of
     # RNA and DNA bases).
     # Read the docstring above for additional clues.
-    rna_pattern_str = r'AUCG'
-    dna_pattern_str = r'ATCG'
+    rna_pattern_str = r'[AUCG]*'
+    dna_pattern_str = r'[ATCG]*'
     ##########################################################################
 
-    rna_pattern = re.compile(rna_pattern_str)
-    dna_pattern = re.compile(dna_pattern_str)
+    rna_pattern = re.compile(rna_pattern_str, re.IGNORECASE)
+    dna_pattern = re.compile(dna_pattern_str, re.IGNORECASE)
 
-    if rna_pattern.match(sequence):
+    if rna_pattern.fullmatch(sequence):
         return
-    if dna_pattern.match(sequence):
+    if dna_pattern.fullmatch(sequence):
         return
     else:
         raise Exception("Invalid sequence: {0!r}".format(sequence))
@@ -75,7 +75,7 @@ def vet_nucleotide_sequence(sequence):
 
 def vet_codon(codon):
     """
-    Return None if `codon` is a valid RNA codon, else raise an exception. 
+    Return None if `codon` is a valid RNA codon, else raise an exception.
 
     Parameters
     ----------
@@ -94,7 +94,7 @@ def vet_codon(codon):
     >>> vet_codon('AUG') == None
     True
 
-    lower-case is also vaild 
+    lower-case is also vaild
     >>> vet_codon('aug') == None
     True
 
@@ -119,12 +119,12 @@ def vet_codon(codon):
     # Change `codon_pattern_str` so that it will match any valid codons, and
     # only valid codons.
     # Read the docstring above for additional clues.
-    codon_pattern_str = r'AUG'
+    codon_pattern_str = r'[AUGC]{3}'
     ##########################################################################
 
-    codon_pattern = re.compile(codon_pattern_str)
+    codon_pattern = re.compile(codon_pattern_str, re.IGNORECASE)
 
-    if codon_pattern.match(codon):
+    if codon_pattern.fullmatch(codon):
         return
     else:
         raise Exception("Invalid codon: {0!r}".format(codon))
@@ -207,11 +207,13 @@ def find_first_orf(sequence,
     # exactly. Change `orf_pattern_str` so that it will match any open reading
     # frame.
     # Read the docstring above for additional clues.
-    orf_pattern_str = r'AUGGUAUAA'
+    start_codon_regex = '|'.join(start_codons)
+    stop_codon_regex = '|'.join(stop_codons)
+    orf_pattern_str = rf'({start_codon_regex}(?:[ACGU]{{3}})*?({stop_codon_regex}))'
     ##########################################################################
 
     # Create the regular expression object
-    orf_pattern = re.compile(orf_pattern_str)
+    orf_pattern = re.compile(orf_pattern_str, re.IGNORECASE)
     # Search the sequence
     match_object = orf_pattern.search(seq)
     if match_object:
